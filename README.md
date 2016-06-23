@@ -17,3 +17,5 @@ Place your SSID and password into the appropriate locations in the code.
 Name your CTs so they're human readable.
 
 
+
+Code uses modified libraries from OpenEnergyMonitor - https://openenergymonitor.org/emon/.  The original library is located at https://github.com/openenergymonitor/EmonLib.
