@@ -1,8 +1,17 @@
-
-
-//**** Using a Teensy 3.2 and ESP8266 with AT firmware to serve webpages and make HTTP requests  *******
+//
+//This uses a Teensy 3.2 and ESP8266 with AT firmware
+//Modified Emonlib - https://github.com/openenergymonitor/EmonLib
+//With help from the PJRC forums - https://forum.pjrc.com/threads/31973-Teensy-3-2-as-a-WiFi-webserver
+//
+//This takes data from various CTs and voltage waveform sources to get accurate voltage, power factor, real power, apparent power
+//Data can be viewed as a webpage directly from the Teensy/ESP8266 combo (it'll serve you a webpage)
+//Data is also available in json format upon request - use the url /json
+//Data is pushed in a json format compatible with Emoncms - https://emoncms.org/  to an Emoncms server of your choice (a private one or the public one)
+//
+//
 //     Tested with Arduino 1.68 and Teensyduino 1.28
 //     Tested with ESP8266 AT Firmware - v 1.6
+
 
 #include "TeensyESP.h"
 #include "EmonLib.h"
@@ -11,7 +20,7 @@
 
 #define SSID  "SSID"      // change this to match your WiFi SSID
 #define PASS  "PASSWORD"  // change this to match your WiFi password
-#define PORT  "80"           // using port 8080 by default
+#define PORT  "80"        // using port 8080 by default
 
 #define cms_ip "IP_OR_URL"
 
@@ -21,6 +30,7 @@
 #define ReadCTs
 #define PushData
 
+//12 is max number of CTs (hardware)
 #define num_CTs 11
 
 
@@ -34,7 +44,7 @@ float current[num_CTs] = {0};
 float PowerFactor[num_CTs] = {0};
 float voltage = 0;
 
-//12 is max number of CTs (hardware), this stores the descriptions of the CTs
+//this stores the names of the CTs
 String CTdescs[12] = {0};
 
 
@@ -51,7 +61,6 @@ void setup() {
     
     //voltage calibration:
     //voltage(input_pin, volt_scaling_const, phase_shift)  
-
     //since all CTs use the same voltage source, we iterate them
     for (int i=0; i < num_CTs; i++) {
       CT[i].voltage(13, 124, 1.7);

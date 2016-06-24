@@ -5,7 +5,7 @@
   modified to use up to 12 bits ADC resolution (ex. Arduino Due)
   by boredman@boredomprojects.net 26.12.2013
   Low Pass filter for offset removal replaces HP filter 1/1/2015 - RW
-  Modified for use in custom setup PA
+  Modified for use in custom setup Philip Ahlers 6/23/16
 */
 
 #ifndef EmonLib_h
@@ -25,7 +25,7 @@
 
 // to enable 12-bit ADC resolution on Arduino Due, 
 // include the following line in main sketch inside setup() function:
-//  analogReadResolution(ADC_BITS);
+// analogReadResolution(ADC_BITS);
 // otherwise will default to 10 bits, as in regular Arduino-based boards.
 
 #define ADC_BITS    12
