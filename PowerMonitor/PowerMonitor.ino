@@ -5,7 +5,7 @@
 //
 //This sketch takes data from multiple CTs and voltage waveform sources to get accurate voltage, power factor, real power, apparent power
 //Data can be viewed as a webpage directly from the Teensy/ESP8266 combo (it'll serve you a webpage)
-//Data is also available in json format upon request - use the url /json
+//Data is also available in json format upon request - use the url /powerjson
 //Data is pushed in a json format compatible with Emoncms - https://emoncms.org/  to an Emoncms server of your choice (a private one or the public one)
 //
 //
@@ -25,9 +25,10 @@
 #define cms_ip "IP_OR_URL"
 #define cms_push_freq 6000
 #define CT_poll_speed 1000   //if disable webserver mode, you can decrease these both (although it takes a second or two to push the data)
+#define cms_apikey "30b68fdbe74aef857d36db58d6cc195b"
 
 
-#define num_CTs 11        //12 is max number of CTs (hardware)
+#define num_CTs 11        //12 is max number of CTs (hardware). Teensy 3.2 has 21 ADCs.
 
 
 //#define Passthrough     //To enable direct passthrough from PC > ESP8266 : disable all other modes.
@@ -50,10 +51,6 @@ float PowerFactor[num_CTs] = {0};
 float voltage = 0;
 
 String CTdescs[12] = {0};
-
-
-
-
 
 
 void setup() {
@@ -185,11 +182,11 @@ void loop() {
 
 
 String makeHTTPGet(){
-   //  this request looks like:  http://192.168.1.34/emoncms/input/post.json?node=1&json={power:200}&apikey=30b68fdbe74aef857d36db58d6cc195b
    String GetReq;
-   
-   GetReq =  "GET /emoncms/input/post.json?node=1&apikey=30b68fdbe74aef857d36db58d6cc195b&json=";
-   //now appending json of all data
+  
+   GetReq =  "GET /emoncms/input/post.json?node=1&apikey=";
+   GetReq += cms_apikey;
+   GetReq += "&json=";
    GetReq += json_gen_forcms();
    GetReq += " HTTP/1.1\r\n"; 
    GetReq += "Host:" ;
