@@ -11,25 +11,9 @@
 #ifndef EmonLib_h
 #define EmonLib_h
 
-#if defined(ARDUINO) && ARDUINO >= 100
-
 #include "Arduino.h"
 
-#else
-
-#include "WProgram.h"
-
-#endif
-
-
-
-// to enable 12-bit ADC resolution on Arduino Due, 
-// include the following line in main sketch inside setup() function:
-// analogReadResolution(ADC_BITS);
-// otherwise will default to 10 bits, as in regular Arduino-based boards.
-
 #define ADC_BITS    12
-
 
 #define ADC_COUNTS  (1<<ADC_BITS)
 

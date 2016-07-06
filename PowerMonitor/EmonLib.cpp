@@ -5,16 +5,10 @@
   modified to use up to 12 bits ADC resolution (ex. Arduino Due)
   by boredman@boredomprojects.net 26.12.2013
   Low Pass filter for offset removal replaces HP filter 1/1/2015 - RW
+  Modified for use in custom setup Philip Ahlers 6/23/16
 */
 
-//#include "WProgram.h" un-comment for use on older versions of Arduino IDE
 #include "EmonLib.h"
-
-#if defined(ARDUINO) && ARDUINO >= 100
-#include "Arduino.h"
-#else
-#include "WProgram.h"
-#endif
 
 
 //--------------------------------------------------------------------------------------
@@ -88,7 +82,7 @@ void EnergyMonitor::calcVI(unsigned int crossings, unsigned int timeout)
     //     then subtract this - signal is now centred on 0 counts.
     //-----------------------------------------------------------------------------
     offsetV = offsetV + ((sampleV-offsetV)/4096);
-	filteredV = sampleV - offsetV;
+    filteredV = sampleV - offsetV;
     offsetI = offsetI + ((sampleI-offsetI)/4096);
 	
     filteredI = sampleI - offsetI;

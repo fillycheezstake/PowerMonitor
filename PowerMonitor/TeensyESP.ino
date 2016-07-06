@@ -8,7 +8,6 @@ ESP::ESP() {
 
 }
 
-
 void ESP::setupWiFi() {
   //this char is used for waiting for the ESP's responses ie, OK
   char OKrn[] = "OK\r\n";

@@ -1,9 +1,9 @@
 //
 //This uses a Teensy 3.2 and ESP8266 with AT firmware
-//Modified Emonlib - https://github.com/openenergymonitor/EmonLib
+//Uses a Modified Emonlib - https://github.com/openenergymonitor/EmonLib
 //With help from the PJRC forums - https://forum.pjrc.com/threads/31973-Teensy-3-2-as-a-WiFi-webserver
 //
-//This takes data from various CTs and voltage waveform sources to get accurate voltage, power factor, real power, apparent power
+//This sketch takes data from multiple CTs and voltage waveform sources to get accurate voltage, power factor, real power, apparent power
 //Data can be viewed as a webpage directly from the Teensy/ESP8266 combo (it'll serve you a webpage)
 //Data is also available in json format upon request - use the url /json
 //Data is pushed in a json format compatible with Emoncms - https://emoncms.org/  to an Emoncms server of your choice (a private one or the public one)
@@ -23,15 +23,20 @@
 #define PORT  "80"        // using port 8080 by default
 
 #define cms_ip "IP_OR_URL"
+#define cms_push_freq 6000
+#define CT_poll_speed 1000   //if disable webserver mode, you can decrease these both (although it takes a second or two to push the data)
 
-//#define Passthrough
+
+#define num_CTs 11        //12 is max number of CTs (hardware)
+
+
+//#define Passthrough     //To enable direct passthrough from PC > ESP8266 : disable all other modes.
 //#define SerialOut
 #define WebServerMode
 #define ReadCTs
 #define PushData
 
-//12 is max number of CTs (hardware)
-#define num_CTs 11
+
 
 
 ESP esp8266;
@@ -44,7 +49,6 @@ float current[num_CTs] = {0};
 float PowerFactor[num_CTs] = {0};
 float voltage = 0;
 
-//this stores the names of the CTs
 String CTdescs[12] = {0};
 
 
@@ -56,7 +60,7 @@ void setup() {
     
     //Setup computer to Teensy serial
     Serial.begin(115200);
-    //12-bit adc resoluiton
+    //12-bit adc resolution
     analogReadResolution(12);
     
     //voltage calibration:
@@ -70,18 +74,18 @@ void setup() {
     //current(input_pin, i_scaling_const)
     //expriemental data found 30 works good for the 30A 1V output CTs
     //divided by 2 to use 15A CTs, by 3 for 10A CTs
-    CT[0].current(1, 15);
-    CT[1].current(2, 15);
-    CT[2].current(3, 15);
-    CT[3].current(4, 30);    
-    CT[4].current(5, 30);
-    CT[5].current(6, 30);
-    CT[6].current(7, 30);
-    CT[7].current(8, 10);
-    CT[8].current(9, 30);
-    CT[9].current(10, 30);
-    CT[10].current(11, 30);
-    CT[11].current(12, 15);         
+    CT[0].current(A1, 15);
+    CT[1].current(A2, 15);
+    CT[2].current(A3, 15);
+    CT[3].current(A4, 30);    
+    CT[4].current(A5, 30);
+    CT[5].current(A6, 30);
+    CT[6].current(A7, 30);
+    CT[7].current(A8, 10);
+    CT[8].current(A9, 30);
+    CT[9].current(A10, 30);
+    CT[10].current(A11, 30);
+    CT[11].current(A12, 15);         
     
     CTdescs[0] = "OutF";
     CTdescs[1] = "WtrP";
@@ -96,11 +100,8 @@ void setup() {
     CTdescs[10] = "BarO";
     CTdescs[11] = "SETME";
 
-        
-    //#ifdef WebServerMode
     delay(5000);  //wait for Teensy to come up
     esp8266.setupWiFi();
-    //#endif
 }
 
 void loop() {    
@@ -123,19 +124,19 @@ void loop() {
         //Serial.print("---PageToServe:   ");
         if (PageToServe == "/") {
           Serial.println("----Homepage Served----");
-          esp8266.SendContent(header_gen(),homepage_content_gen());
+          esp8266.SendContent(homepage_header_gen(),homepage_content_gen());
         }
         else if (PageToServe == "powerjson") {
           Serial.println("----json data served----");
-          esp8266.SendContent(power_json_header(),json_gen());
+          esp8266.SendContent(json_out_header_gen(),json_out_gen());
         }
         else if (PageToServe == "favicon.ico"){
           Serial.println("----Favicon Served----");
-          esp8266.SendContent(PageNotFoundHeader(),PNF_content_gen());
+          esp8266.SendContent(PNF_header_gen(),PNF_content_gen());
         }
         else {
           Serial.println("----404 Served----");
-          esp8266.SendContent(PageNotFoundHeader(),PNF_content_gen());          
+          esp8266.SendContent(PNF_header_gen(),PNF_content_gen());          
         }   
       }
     #endif
@@ -143,12 +144,11 @@ void loop() {
     unsigned long currentMillis = millis();
 
     #ifdef ReadCTs  
-    //loop every num_CTs * .1 secs (for six, .6 seconds, for twelve, 1.2 seconds)
-    //just to allow waiting for HTTP clients, and to let the emonlib find zero faster
+    //loop every num_CTs * .1 secs
+    //just to allow waiting for HTTP clients
     //reading the CTs is code blocking - nothing else happens during read
-    if (currentMillis - previousMillis > num_CTs * 100) {
+    if (currentMillis - previousMillis >  CT_poll_speed) {
       //get the data - calcVI(num_crosses, timeout)
-      //since this doesn't include any unique values--thats in setup(), we can iterate them as they're all the same
       for (int i=0; i < num_CTs; i++) {
         //loops through all CTs, saving their values in corresponding arrays
         CT[i].calcVI(20,1000);
@@ -165,8 +165,8 @@ void loop() {
     
     
     #ifdef PushData
-    //every six seconds, push data to emoncms
-    if (currentMillis - previousMillis > 6000) {
+    //every cms_push_freq seconds, push data to emoncms
+    if (currentMillis - previousMillis > cms_push_freq) {
       esp8266.sendHTTPRequest(cms_ip,makeHTTPGet());
       previousMillis = millis();
     }   
@@ -178,6 +178,11 @@ void loop() {
     CT[0].serialprint();
     #endif
 }
+
+
+
+
+
 
 String makeHTTPGet(){
    //  this request looks like:  http://192.168.1.34/emoncms/input/post.json?node=1&json={power:200}&apikey=30b68fdbe74aef857d36db58d6cc195b
@@ -192,44 +197,6 @@ String makeHTTPGet(){
    GetReq += "\r\n\r\n";
    
    return GetReq;      
-}
-
-
-String PageNotFoundHeader() {
-  String header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n";
-  header += "Content-Length:";
-  header += (int)(PNF_content_gen().length());
-  header += "\r\n\r\n";
-  return(header);
-}
-
-String PNF_content_gen() {
-  String content="";
-    content += "<!DOCTYPE html>";
-    content += "<html>";
-    content += "<body>";
-
-    content += "<h1> 404, Page Not Found </h1>";
-
-    content += " <p> Teensy server uptime ";
-    content += "<font color=#0000FF> ";
-    content += String(millis()/1000); 
-    content += " seconds </font> </p>";
-    
-    content += "</body>";
-    content += "</html>";
-    content += "<br />\n";       
-    content += "\r\n";
-
-    return(content);
-}
-
-String power_json_header() {
-  String header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n";
-  header += "Content-Length:";
-  header += (int)(json_gen().length());
-  header += "\r\n\r\n";
-  return(header);
 }
 
 
@@ -259,9 +226,45 @@ String json_gen_forcms() {
 }
 
 
+String PNF_header_gen() {
+  String header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n";
+  header += "Content-Length:";
+  header += (int)(PNF_content_gen().length());
+  header += "\r\n\r\n";
+  return(header);
+}
+
+String PNF_content_gen() {
+  String content="";
+    content += "<!DOCTYPE html>";
+    content += "<html>";
+    content += "<body>";
+
+    content += "<h1> 404, Page Not Found </h1>";
+
+    content += " <p> Teensy server uptime ";
+    content += "<font color=#0000FF> ";
+    content += String(millis()/1000); 
+    content += " seconds </font> </p>";
+    
+    content += "</body>";
+    content += "</html>";
+    content += "<br />\n";       
+    content += "\r\n";
+
+    return(content);
+}
+
+String json_out_header_gen() {
+  String header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n";
+  header += "Content-Length:";
+  header += (int)(json_out_gen().length());
+  header += "\r\n\r\n";
+  return(header);
+}
 
 
-String json_gen() {
+String json_out_gen() {
 
   StaticJsonBuffer<1500> jsonBuffer;
   JsonObject& CTjson = jsonBuffer.createObject();
@@ -280,11 +283,8 @@ String json_gen() {
     nestedObject["PF"] = PowerFactor[i];
     nestedObject["I"] = current[i];
   }
-
-  CTjson.printTo(Serial);
-  Serial.println();
   
-  char json_content[512];
+  char json_content[1024];
   CTjson.printTo(json_content,sizeof(json_content));
   
   //json_content =  "{\"CT1\": {\"Desc\": \"WORK\",\"RealP\": 100.2,\"AppP\": 200.2,\"I\": 22.3,\"PF\": 0.59},  \"CT2\": {\"Desc\": \"TIME\",\"RealP\": 200.2,\"AppP\": 100.2,\"I\": 12.3,\"PF\": 0.9} }";
@@ -293,7 +293,7 @@ String json_gen() {
 }
 
 
-String header_gen() {
+String homepage_header_gen() {
   String header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n";
   header += "Content-Length:";
   header += (int)(homepage_content_gen().length());
