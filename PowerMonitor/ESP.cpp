@@ -36,6 +36,8 @@ void ESP::setupWiFi(String Name, String Passw, int pt) {
   Serial1.println("AT+CIPMUX=1");
   wait_for_esp_response(1000,OKrn);
   
+  #ifdef WebServerMode
+  
   //Create TCP Server that listens on specified port
   Serial1.print("AT+CIPSERVER=1,"); 
   Serial1.println(pt);
@@ -48,6 +50,13 @@ void ESP::setupWiFi(String Name, String Passw, int pt) {
   //don't show the remote IP and port upon a HTTP GET request (makes parsing easier)
   Serial1.println("AT+CIPDINFO=0");  
   wait_for_esp_response(1000,OKrn);
+  
+  #else
+  //Turn off TCP Server (if on)
+  Serial1.print("AT+CIPSERVER=0"); 
+  wait_for_esp_response(1000,OKrn);
+  
+  #endif
 
   //shows IP Addr
   Serial1.println("AT+CIFSR");

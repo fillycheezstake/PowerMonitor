@@ -98,6 +98,7 @@ void setup() {
     CTdescs[11] = "SETME";
 
     delay(5000);  //wait for Teensy to come up
+    //SSID, PASS, Port Number
     esp8266.setupWiFi(SSID,PASS,80);
 }
 
