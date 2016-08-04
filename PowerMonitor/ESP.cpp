@@ -1,14 +1,17 @@
-#include "TeensyESP.h"
+
+
+#include "ESP.h"
+
 
 ESP::ESP() {
-    
+  
     // Setup Teensy to ESP8266 serial
     // Use baud rate 115200 during firmware update
     Serial1.begin(115200);
 
 }
 
-void ESP::setupWiFi() {
+void ESP::setupWiFi(String Name, String Passw, int pt) {
   //this char is used for waiting for the ESP's responses ie, OK
   char OKrn[] = "OK\r\n";
   
@@ -23,9 +26,9 @@ void ESP::setupWiFi() {
 
   //join AP
   Serial1.print("AT+CWJAP_CUR=\"");
-  Serial1.print(SSID);
+  Serial1.print(Name);
   Serial1.print("\",\""); 
-  Serial1.print(PASS);
+  Serial1.print(Passw);
   Serial1.println("\"");
   wait_for_esp_response(9000,OKrn);
 
@@ -35,7 +38,7 @@ void ESP::setupWiFi() {
   
   //Create TCP Server that listens on specified port
   Serial1.print("AT+CIPSERVER=1,"); 
-  Serial1.println(PORT);
+  Serial1.println(pt);
   wait_for_esp_response(1000,OKrn);
 
   //set TCP server timeout to xx seconds (up to 7200)

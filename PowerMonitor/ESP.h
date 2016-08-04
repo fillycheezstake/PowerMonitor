@@ -1,3 +1,4 @@
+#include "Arduino.h"
 
 #ifndef ESP_h
 #define ESP_h
@@ -9,7 +10,7 @@ class ESP
     
   public:
     ESP();
-    void setupWiFi();
+    void setupWiFi(String,String,int);
     void sendHTTPRequest(String,String);
     String ListenForClients();
     void SendContent(String,String);

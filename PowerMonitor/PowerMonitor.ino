@@ -13,7 +13,7 @@
 //     Tested with ESP8266 AT Firmware - v 1.6
 
 
-#include "TeensyESP.h"
+#include "ESP.h"
 #include "EmonLib.h"
 #include <ArduinoJson.h>
 
@@ -98,7 +98,7 @@ void setup() {
     CTdescs[11] = "SETME";
 
     delay(5000);  //wait for Teensy to come up
-    esp8266.setupWiFi();
+    esp8266.setupWiFi(SSID,PASS,80);
 }
 
 void loop() {    
