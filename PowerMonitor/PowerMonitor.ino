@@ -99,8 +99,8 @@ void setup() {
     CTdescs[5] = "GenA";
     CTdescs[6] = "HeatA";
     CTdescs[7] = "GenB";    
-    CTdescs[8] = "SETME";
-    CTdescs[9] = "SETME";
+    CTdescs[8] = "Unused";
+    CTdescs[9] = "Unused";
     CTdescs[10] = "HeatB";
     CTdescs[11] = "HeatC";
     CTdescs[12] = "Mains1";
