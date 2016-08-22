@@ -82,7 +82,11 @@ void setup() {
     CT[8].current(A9, 30);
     CT[9].current(A10, 30);
     CT[10].current(A11, 30);
-    CT[11].current(A12, 15);         
+    CT[11].current(A12, 15);   
+    CT[12].current(A13, 30);
+    CT[13].current(A14, 30);
+    CT[14].current(A15, 30);
+    CT[15].current(A16, 15); 
     
     CTdescs[0] = "OutF";
     CTdescs[1] = "WtrP";
@@ -93,6 +97,9 @@ void setup() {
     CTdescs[6] = "Garage";
     CTdescs[7] = "KitcLt";    
     CTdescs[8] = "Kitc2";
+    CTdescs[9] = "MicOv";
+    CTdescs[10] = "BarO";
+    CTdescs[11] = "SETME";
     CTdescs[9] = "MicOv";
     CTdescs[10] = "BarO";
     CTdescs[11] = "SETME";
