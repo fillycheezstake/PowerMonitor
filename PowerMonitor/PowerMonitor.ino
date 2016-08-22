@@ -28,7 +28,7 @@
 #define cms_apikey "30b68fdbe74aef857d36db58d6cc195b"
 
 
-#define num_CTs 11        //12 is max number of CTs (hardware). Teensy 3.2 has 21 ADCs.
+#define num_CTs 18        //12 is max number of CTs (hardware). Teensy 3.2 has 21 ADCs.
 
 
 //#define Passthrough     //To enable direct passthrough from PC > ESP8266 : disable all other modes.
@@ -50,7 +50,7 @@ float current[num_CTs] = {0};
 float PowerFactor[num_CTs] = {0};
 float voltage = 0;
 
-String CTdescs[12] = {0};
+String CTdescs[num_CTs] = {0};
 
 
 void setup() {
@@ -71,38 +71,44 @@ void setup() {
     //current(input_pin, i_scaling_const)
     //expriemental data found 30 works good for the 30A 1V output CTs
     //divided by 2 to use 15A CTs, by 3 for 10A CTs
-    CT[0].current(A1, 15);
-    CT[1].current(A2, 15);
-    CT[2].current(A3, 15);
-    CT[3].current(A4, 30);    
-    CT[4].current(A5, 30);
+    CT[0].current(A1, 30);
+    CT[1].current(A2, 30);
+    CT[2].current(A3, 30);
+    CT[3].current(A4, 10);    
+    CT[4].current(A5, 15);
     CT[5].current(A6, 30);
-    CT[6].current(A7, 30);
-    CT[7].current(A8, 10);
-    CT[8].current(A9, 30);
-    CT[9].current(A10, 30);
-    CT[10].current(A11, 30);
+    CT[6].current(A7, 30);  //need calib
+    CT[7].current(A8, 30);
+    CT[8].current(A9, 30);  //unused
+    CT[9].current(A10, 30);  //unused
+    CT[10].current(A11, 30);  //need calib start
     CT[11].current(A12, 15);   
     CT[12].current(A13, 30);
     CT[13].current(A14, 30);
     CT[14].current(A15, 30);
-    CT[15].current(A16, 15); 
-    
-    CTdescs[0] = "OutF";
-    CTdescs[1] = "WtrP";
-    CTdescs[2] = "Bonus";
-    CTdescs[3] = "WtrH";
-    CTdescs[4] = "Kitc";
-    CTdescs[5] = "Dryr";
-    CTdescs[6] = "Garage";
-    CTdescs[7] = "KitcLt";    
-    CTdescs[8] = "Kitc2";
-    CTdescs[9] = "MicOv";
-    CTdescs[10] = "BarO";
-    CTdescs[11] = "SETME";
-    CTdescs[9] = "MicOv";
-    CTdescs[10] = "BarO";
-    CTdescs[11] = "SETME";
+    CT[15].current(A16, 15);
+    CT[16].current(A17, 15);     
+    CT[17].current(A18, 15);  //need calib end
+        
+    // CT1 = array CT[0]
+    CTdescs[0] = "ACA";
+    CTdescs[1] = "ACB";
+    CTdescs[2] = "PoolPump";
+    CTdescs[3] = "PoolLt";
+    CTdescs[4] = "Spare";
+    CTdescs[5] = "GenA";
+    CTdescs[6] = "HeatA";
+    CTdescs[7] = "GenB";    
+    CTdescs[8] = "SETME";
+    CTdescs[9] = "SETME";
+    CTdescs[10] = "HeatB";
+    CTdescs[11] = "HeatC";
+    CTdescs[12] = "Mains1";
+    CTdescs[13] = "Mains2";
+    CTdescs[14] = "Mains3";
+    CTdescs[15] = "CookTp";
+    CTdescs[16] = "Oven";
+    CTdescs[16] = "Mains4";
 
     delay(5000);  //wait for Teensy to come up
     //SSID, PASS, Port Number
