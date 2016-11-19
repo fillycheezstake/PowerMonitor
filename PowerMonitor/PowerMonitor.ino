@@ -9,7 +9,7 @@
 //Data is pushed in a json format compatible with Emoncms - https://emoncms.org/  to an Emoncms server of your choice (a private one or the public one)
 //
 //
-//     Tested with Arduino 1.68 and Teensyduino 1.28
+//     Tested with Arduino 1.6.11 and Teensyduino 1.30
 //     Tested with ESP8266 AT Firmware - v 1.6
 
 
@@ -18,11 +18,11 @@
 #include <ArduinoJson.h>
 
 
-#define SSID  "SSID"      // change this to match your WiFi SSID
-#define PASS  "PASSWORD"  // change this to match your WiFi password
+#define SSID  "AHLERS"      // change this to match your WiFi SSID
+#define PASS  "MikeyAhlers"  // change this to match your WiFi password
 #define PORT  "80"        // using port 8080 by default
 
-#define cms_ip "IP_OR_URL"
+#define cms_ip "192.168.0.44"
 #define cms_push_freq 6000
 #define CT_poll_speed 1000   //if disable webserver mode, you can decrease these both (although it takes a second or two to push the data)
 #define cms_apikey "30b68fdbe74aef857d36db58d6cc195b"
@@ -33,7 +33,7 @@
 
 //#define Passthrough     //To enable direct passthrough from PC > ESP8266 : disable all other modes.
 //#define SerialOut
-#define WebServerMode
+//#define WebServerMode
 #define ReadCTs
 #define PushData
 
@@ -64,7 +64,7 @@ void setup() {
     //voltage(input_pin, volt_scaling_const, phase_shift)  
     //since all CTs use the same voltage source, we iterate them
     for (int i=0; i < num_CTs; i++) {
-      CT[i].voltage(13, 124, 1.7);
+      CT[i].voltage(A0, 118, 1.7);
     }
     
     //current calibration:
@@ -77,18 +77,18 @@ void setup() {
     CT[3].current(A4, 10);    
     CT[4].current(A5, 15);
     CT[5].current(A6, 30);
-    CT[6].current(A7, 30);  //need calib
+    CT[6].current(A7, 106);  //need calib
     CT[7].current(A8, 30);
     CT[8].current(A9, 30);  //unused
     CT[9].current(A10, 30);  //unused
-    CT[10].current(A11, 30);  //need calib start
-    CT[11].current(A12, 15);   
-    CT[12].current(A13, 30);
-    CT[13].current(A14, 30);
-    CT[14].current(A15, 30);
-    CT[15].current(A16, 15);
-    CT[16].current(A17, 15);     
-    CT[17].current(A18, 15);  //need calib end
+    CT[10].current(A11, 71);  //need calib start
+    CT[11].current(A12, 50);   
+    CT[12].current(A13, 233);
+    CT[13].current(A14, 233);
+    CT[14].current(A15, 233);
+    CT[15].current(A16, 50);
+    CT[16].current(A17, 50);     
+    CT[17].current(A18, 233);  //need calib end
         
     // CT1 = array CT[0]
     CTdescs[0] = "ACA";
@@ -100,7 +100,7 @@ void setup() {
     CTdescs[6] = "HeatA";
     CTdescs[7] = "GenB";    
     CTdescs[8] = "Unused";
-    CTdescs[9] = "Unused";
+    CTdescs[9] = "Unused2";
     CTdescs[10] = "HeatB";
     CTdescs[11] = "HeatC";
     CTdescs[12] = "Mains1";
@@ -108,7 +108,7 @@ void setup() {
     CTdescs[14] = "Mains3";
     CTdescs[15] = "CookTp";
     CTdescs[16] = "Oven";
-    CTdescs[16] = "Mains4";
+    CTdescs[17] = "Mains4";
 
     delay(5000);  //wait for Teensy to come up
     //SSID, PASS, Port Number
@@ -198,7 +198,7 @@ void loop() {
 String makeHTTPGet(){
    String GetReq;
   
-   GetReq =  "GET /emoncms/input/post.json?node=1&apikey=";
+   GetReq =  "GET /emoncms/input/post.json?node=2&apikey=";
    GetReq += cms_apikey;
    GetReq += "&json=";
    GetReq += json_gen_forcms();
@@ -213,7 +213,7 @@ String makeHTTPGet(){
 
 String json_gen_forcms() {
  
-  StaticJsonBuffer<2500> jsonBuffer;
+  StaticJsonBuffer<3000> jsonBuffer;
   JsonObject& CTjson = jsonBuffer.createObject();
   
   CTjson["voltage"] = voltage;
@@ -230,7 +230,7 @@ String json_gen_forcms() {
     CTjson[key] = current[i];
   }
 
-  char json_content[1024];
+  char json_content[2048];
   CTjson.printTo(json_content,sizeof(json_content));
   Serial.println(json_content);
   return(json_content);
