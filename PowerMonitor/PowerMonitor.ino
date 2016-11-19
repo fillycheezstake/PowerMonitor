@@ -9,8 +9,9 @@
 //Data is pushed in a json format compatible with Emoncms - https://emoncms.org/  to an Emoncms server of your choice (a private one or the public one)
 //
 //
-//     Tested with Arduino 1.68 and Teensyduino 1.28
-//     Tested with ESP8266 AT Firmware - v 1.6
+//     Tested with Arduino 1.6.12 and Teensyduino 1.31
+//     Tested with ESP8266 AT Firmware - AT version:1.3.0.0(Jul 14 2016 18:54:01) SDK version:2.0.0(656edbf)
+
 
 
 #include "ESP.h"
@@ -19,21 +20,21 @@
 
 
 #define SSID  "SSID"      // change this to match your WiFi SSID
-#define PASS  "PASSWORD"  // change this to match your WiFi password
-#define PORT  "80"        // using port 8080 by default
+#define PASS  "WifiPassword"  // change this to match your WiFi password
+#define PORT  "80"        // using port 80 by default
 
-#define cms_ip "IP_OR_URL"
-#define cms_push_freq 6000
+#define cms_ip "CMS_IP"
+#define cms_push_freq 4000
 #define CT_poll_speed 1000   //if disable webserver mode, you can decrease these both (although it takes a second or two to push the data)
-#define cms_apikey "30b68fdbe74aef857d36db58d6cc195b"
+#define cms_apikey "APIKEY_HERE"
 
 
-#define num_CTs 11        //12 is max number of CTs (hardware). Teensy 3.2 has 21 ADCs.
+#define num_CTs 12        //12 is max number of CTs (hardware). Teensy 3.2 has 21 ADCs.
 
 
 //#define Passthrough     //To enable direct passthrough from PC > ESP8266 : disable all other modes.
 //#define SerialOut
-#define WebServerMode
+//#define WebServerMode
 #define ReadCTs
 #define PushData
 
@@ -97,7 +98,9 @@ void setup() {
     CTdescs[10] = "BarO";
     CTdescs[11] = "SETME";
 
+    Serial.println("Booting... waiting for WiFi & Teensy");
     delay(5000);  //wait for Teensy to come up
+    delay(10000);  //wait for WiFi Network to come online (if power outage)
     //SSID, PASS, Port Number
     esp8266.setupWiFi(SSID,PASS,80);
 }
@@ -142,8 +145,6 @@ void loop() {
     unsigned long currentMillis = millis();
 
     #ifdef ReadCTs  
-    //loop every num_CTs * .1 secs
-    //just to allow waiting for HTTP clients
     //reading the CTs is code blocking - nothing else happens during read
     if (currentMillis - previousMillis >  CT_poll_speed) {
       //get the data - calcVI(num_crosses, timeout)
