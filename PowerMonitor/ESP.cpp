@@ -17,8 +17,14 @@ void ESP::setupWiFi(String Name, String Passw, int pt) {
   
   //turn on echo
   Serial1.println("ATE1");
-
   wait_for_esp_response(1000,OKrn);
+
+  //show version info
+  Serial1.println("AT+GMR");
+  wait_for_esp_response(1000,OKrn);
+  
+  Serial1.println("AT+CWMODE_CUR=1");
+  wait_for_esp_response(1000,OKrn);   
   
   // set mode 1 (station mode), and set to get ip address via DHCP
   Serial1.println("AT+CWDHCP_CUR=1,1");
@@ -53,8 +59,8 @@ void ESP::setupWiFi(String Name, String Passw, int pt) {
   
   #else
   //Turn off TCP Server (if on)
-  Serial1.print("AT+CIPSERVER=0"); 
-  wait_for_esp_response(1000,OKrn);
+  Serial1.println("AT+CIPSERVER=0"); 
+  wait_for_esp_response(2000,OKrn);
   
   #endif
 
