@@ -46,7 +46,8 @@
 
 ESP esp8266;
 EnergyMonitor CT[num_CTs];
-unsigned long previousMillis = 0;
+unsigned long previousCTMillis = 0;
+unsigned long previousPushMillis = 0;
 String PageToServe;
 float RealPower[num_CTs] = {0};
 float ApparentPower[num_CTs] = {0};
@@ -150,8 +151,10 @@ void loop() {
 
     #ifdef ReadCTs  
     //reading the CTs is code blocking - nothing else happens during read
-    if (currentMillis - previousMillis >  CT_poll_speed) {
+    if (currentMillis - previousCTMillis >  CT_poll_speed) {
       //get the data - calcVI(num_crosses, timeout)
+      //to find each zero crossing is the 1/2 the period  - so for US, 60hz: (1/60) / 2 = .00833 seconds per cross. A 20 cross sample will take .1666 seconds
+      //so if you use 20 zero crossings, 12 CTs will take ~2 seconds.
       for (int i=0; i < num_CTs; i++) {
         //loops through all CTs, saving their values in corresponding arrays
         CT[i].calcVI(20,1000);
@@ -162,16 +165,16 @@ void loop() {
       }
       //just use voltage from CT1, as the voltage is the same for all (or should be)
       voltage = CT[0].Vrms;
-      previousMillis = millis();
+      previousCTMillis = millis();
     }
     #endif
     
     
     #ifdef PushData
     //every cms_push_freq seconds, push data to emoncms
-    if (currentMillis - previousMillis > cms_push_freq) {
+    if (currentMillis - previousPushMillis > cms_push_freq) {
       esp8266.sendHTTPRequest(cms_ip,makeHTTPGet());
-      previousMillis = millis();
+      previousPushMillis = millis();
     }   
     #endif
 
