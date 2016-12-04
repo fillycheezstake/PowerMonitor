@@ -32,11 +32,14 @@
 #define num_CTs 12        //12 is max number of CTs (hardware). Teensy 3.2 has 21 ADCs.
 
 
-//#define Passthrough     //To enable direct passthrough from PC > ESP8266 : disable all other modes.
-//#define SerialOut
-//#define WebServerMode
-#define ReadCTs
-#define PushData
+//#define Passthrough     //To enable direct passthrough from PC -> ESP8266 : disable all other modes.
+
+#ifndef Passthough
+  //#define SerialOut
+  //#define WebServerMode
+  #define ReadCTs
+  #define PushData
+#endif
 
 
 
@@ -106,6 +109,7 @@ void setup() {
 }
 
 void loop() {    
+    
     #ifdef Passthrough
         // Send bytes from ESP8266 -> Teensy -> Computer
         if ( Serial1.available() ) {
