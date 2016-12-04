@@ -19,17 +19,25 @@
 #include <ArduinoJson.h>
 
 
+<<<<<<< HEAD
 #define SSID  "SSID"      // change this to match your WiFi SSID
 #define PASS  "WifiPassword"  // change this to match your WiFi password
 #define PORT  "80"        // using port 80 by default
 
 #define cms_ip "CMS_IP"
 #define cms_push_freq 4000
+
+#define SSID  "AHLERS"      // change this to match your WiFi SSID
+#define PASS  "MikeyAhlers"  // change this to match your WiFi password
+#define PORT  "80"        // using port 8080 by default
+
+#define cms_ip "192.168.0.44"
+#define cms_push_freq 6000
+
 #define CT_poll_speed 1000   //if disable webserver mode, you can decrease these both (although it takes a second or two to push the data)
 #define cms_apikey "APIKEY_HERE"
 
-
-#define num_CTs 12        //12 is max number of CTs (hardware). Teensy 3.2 has 21 ADCs.
+#define num_CTs 18        //12 is max number of CTs (hardware). Teensy 3.2 has 21 ADCs.
 
 
 //#define Passthrough     //To enable direct passthrough from PC -> ESP8266 : disable all other modes.
@@ -55,7 +63,7 @@ float current[num_CTs] = {0};
 float PowerFactor[num_CTs] = {0};
 float voltage = 0;
 
-String CTdescs[12] = {0};
+String CTdescs[num_CTs] = {0};
 
 
 void setup() {
@@ -69,38 +77,51 @@ void setup() {
     //voltage(input_pin, volt_scaling_const, phase_shift)  
     //since all CTs use the same voltage source, we iterate them
     for (int i=0; i < num_CTs; i++) {
-      CT[i].voltage(13, 124, 1.7);
+      CT[i].voltage(A0, 118, 1.7);
     }
     
     //current calibration:
     //current(input_pin, i_scaling_const)
     //expriemental data found 30 works good for the 30A 1V output CTs
     //divided by 2 to use 15A CTs, by 3 for 10A CTs
-    CT[0].current(A1, 15);
-    CT[1].current(A2, 15);
-    CT[2].current(A3, 15);
-    CT[3].current(A4, 30);    
-    CT[4].current(A5, 30);
+    CT[0].current(A1, 30);
+    CT[1].current(A2, 30);
+    CT[2].current(A3, 30);
+    CT[3].current(A4, 10);    
+    CT[4].current(A5, 15);
     CT[5].current(A6, 30);
-    CT[6].current(A7, 30);
-    CT[7].current(A8, 10);
-    CT[8].current(A9, 30);
-    CT[9].current(A10, 30);
-    CT[10].current(A11, 30);
-    CT[11].current(A12, 15);         
-    
-    CTdescs[0] = "OutF";
-    CTdescs[1] = "WtrP";
-    CTdescs[2] = "Bonus";
-    CTdescs[3] = "WtrH";
-    CTdescs[4] = "Kitc";
-    CTdescs[5] = "Dryr";
-    CTdescs[6] = "Garage";
-    CTdescs[7] = "KitcLt";    
-    CTdescs[8] = "Kitc2";
-    CTdescs[9] = "MicOv";
-    CTdescs[10] = "BarO";
-    CTdescs[11] = "SETME";
+    CT[6].current(A7, 106);  //need calib
+    CT[7].current(A8, 30);
+    CT[8].current(A9, 30);  //unused
+    CT[9].current(A10, 30);  //unused
+    CT[10].current(A11, 71);  //need calib start
+    CT[11].current(A12, 50);   
+    CT[12].current(A13, 233);
+    CT[13].current(A14, 233);
+    CT[14].current(A15, 233);
+    CT[15].current(A16, 50);
+    CT[16].current(A17, 50);     
+    CT[17].current(A18, 233);  //need calib end
+        
+    // CT1 = array CT[0]
+    CTdescs[0] = "ACA";
+    CTdescs[1] = "ACB";
+    CTdescs[2] = "PoolPump";
+    CTdescs[3] = "PoolLt";
+    CTdescs[4] = "Spare";
+    CTdescs[5] = "GenA";
+    CTdescs[6] = "HeatA";
+    CTdescs[7] = "GenB";    
+    CTdescs[8] = "Unused";
+    CTdescs[9] = "Unused2";
+    CTdescs[10] = "HeatB";
+    CTdescs[11] = "HeatC";
+    CTdescs[12] = "Mains1";
+    CTdescs[13] = "Mains2";
+    CTdescs[14] = "Mains3";
+    CTdescs[15] = "CookTp";
+    CTdescs[16] = "Oven";
+    CTdescs[17] = "Mains4";
 
     Serial.println("Booting... waiting for WiFi & Teensy");
     delay(5000);  //wait for Teensy to come up
@@ -193,7 +214,7 @@ void loop() {
 String makeHTTPGet(){
    String GetReq;
   
-   GetReq =  "GET /emoncms/input/post.json?node=1&apikey=";
+   GetReq =  "GET /emoncms/input/post.json?node=2&apikey=";
    GetReq += cms_apikey;
    GetReq += "&json=";
    GetReq += json_gen_forcms();
@@ -208,7 +229,7 @@ String makeHTTPGet(){
 
 String json_gen_forcms() {
  
-  StaticJsonBuffer<2500> jsonBuffer;
+  StaticJsonBuffer<3000> jsonBuffer;
   JsonObject& CTjson = jsonBuffer.createObject();
   
   CTjson["voltage"] = voltage;
@@ -225,7 +246,7 @@ String json_gen_forcms() {
     CTjson[key] = current[i];
   }
 
-  char json_content[1024];
+  char json_content[2048];
   CTjson.printTo(json_content,sizeof(json_content));
   Serial.println(json_content);
   return(json_content);
