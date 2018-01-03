@@ -79,8 +79,6 @@ void ESP::sendHTTPRequest(String IP, String data) {
   wait_for_esp_response(5000,OKrn);
 
   Serial1.print("AT+CIPSEND=");
- // Serial1.print(4);
-  //Serial1.print(",");
   Serial1.println(data.length());
   if(wait_for_esp_response(5000,brn)) {
     Serial1.print(data);
@@ -90,7 +88,6 @@ void ESP::sendHTTPRequest(String IP, String data) {
   } 
   else {
     Serial1.print("AT+CIPCLOSE");
-    //Serial1.println(4);
     wait_for_esp_response(1000,OKrn);
  }
 
