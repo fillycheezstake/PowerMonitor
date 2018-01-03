@@ -17,7 +17,7 @@ void ESP::setupWiFi(String Name, String Passw, int pt) {
   char OKrn[] = "OK\r\n";
   char Conrn[] = "WIFI GOT IP\r\n";
 
-  //restore factory settings - this seems to improve power-on reliablity for some reason
+  //restore factory settings - this seems to improve power-on wifi connect reliablity for some reason
   Serial1.println("AT+RESTORE");
   wait_for_esp_response(1000,OKrn);
 
