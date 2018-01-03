@@ -16,20 +16,27 @@
 #include <ArduinoJson.h>
 #include "DHT.h"
 #include <OneWire.h>
+#include <DallasTemperature.h>
 
 #define SSID  "SSID"      // change this to match your WiFi SSID
 #define PASS  "PASS"  // change this to match your WiFi password
 #define PORT  "80"        // using port 8080 by default
 
-#define cms_ip "192.168.0.44"
+#define cms_ip "CMS IP"
 #define cms_apikey "APIKEY"
 #define cms_push_freq 6000
 
-#define CT_poll_speed 1000   //if disable webserver mode, you can decrease these both (although it takes a second or two to push the data)
+#define CT_poll_speed 1000
 #define CRAWL_TEMP_poll_speed 60000      // temp & humididity poll speed
 #define HEAT_PUMP_TEMP_poll_speed 10000  // heat pump temp poll speed
 
-OneWire  ds(2);  // OneWire temperature probe(s) on pin 2
+#define ONE_WIRE_BUS 2
+#define TEMPERATURE_PRECISION 9
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+
+DeviceAddress probe1 = {0x10, 0x5B, 0x6E, 0xD, 0x3, 0x8, 0x0, 0x91} ;
+DeviceAddress probe2 = {0x10, 0x27, 0xC8, 0xD, 0x3, 0x8, 0x0, 0xDB} ;
 
 #define DHTPIN 3     // DHT Temp/Humidity probe on D3
 #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
@@ -40,6 +47,8 @@ DHT dht(DHTPIN, DHTTYPE); // Initialize DHT sensor.
 #define CondSumpPumpAStatePIN 4     // Condensate Sump Pump A State Pin
 #define CondSumpPumpCStatePIN 5     // Condensate Sump Pump C State Pin
 #define CrawlSpacePowerStatePIN 6   // Crawl Space Power State Pin
+
+
 
 ESP esp8266;
 EnergyMonitor CT[num_CTs];
@@ -65,10 +74,10 @@ String CTdescs[num_CTs] = {0};
 
 void setup() {
     
-    //Setup computer to Teensy serial
-    Serial.begin(115200);
-    //12-bit adc resolution
-    analogReadResolution(12);
+    
+    Serial.begin(115200); //Setup computer to Teensy serial
+    
+    analogReadResolution(12);  //12-bit adc resolution
     
     //voltage calibration:
     //voltage(input_pin, volt_scaling_const, phase_shift)  
@@ -120,12 +129,13 @@ void setup() {
     CTdescs[16] = "Oven";
     CTdescs[17] = "Mains4";
 
+    delay(2000);  //wait for Teensy to come up
+    
+    esp8266.setupWiFi(SSID,PASS,80);  //SSID, PASS, Port Number
+
+    sensors.begin();
     dht.begin();
-
-    delay(3000);  //wait for Teensy to come up
-    //SSID, PASS, Port Number
-    esp8266.setupWiFi(SSID,PASS,80);
-
+    
     pinMode(2, INPUT_PULLUP);                         //Tell Teensy to turn on a pullup resistor on the temp probe pin
     pinMode(3, INPUT_PULLUP);                         //Tell Teensy to turn on a pullup resistor on the DHT temp/humidy pin also
     pinMode(CondSumpPumpAStatePIN, INPUT_PULLUP);     //Tell Teensy to turn on a pullup resistor on the condensate A Pump State Pin
@@ -135,33 +145,23 @@ void setup() {
 }
 
 void loop() {   
-  byte i;
-  byte present = 0;
-  byte type_s;
-  byte data[12];
-  byte probeaddr1[8] = {0x10, 0x5B, 0x6E, 0xD, 0x3, 0x8, 0x0, 0x91} ;
-  byte probeaddr2[8] = {0x10, 0x27, 0xC8, 0xD, 0x3, 0x8, 0x0, 0xDB} ;
-  
-  float celsius;
-  int16_t raw;
    
-
-  unsigned long currentMillis = millis();
+    unsigned long currentMillis = millis();
 
     
-    //loop every num_CTs * .1 secs
+    //loop at CT_poll_speed
     if (currentMillis - previousMillis >  CT_poll_speed) {
-      //get the data - calcVI(num_crosses, timeout)
-      for (int i=0; i < num_CTs; i++) {
-        //loops through all CTs, saving their values in corresponding arrays
-        CT[i].calcVI(20,1000);
+      
+      for (int i=0; i < num_CTs; i++) {  //loop through all CTs
+        CT[i].calcVI(20,1000);  //get the data - calcVI(num_crosses, timeout)
         RealPower[i] = CT[i].realPower;
         ApparentPower[i] = CT[i].apparentPower;
         current[i] = CT[i].Irms;
         PowerFactor[i] = CT[i].powerFactor;
       }
-      //just use voltage from CT1, as the voltage is the same for all (or should be)
-      voltage = CT[0].Vrms;
+      
+      voltage = CT[0].Vrms;  //we only store the voltage from the first CT, as the voltage is the same for all (or should be)
+      
       previousMillis = millis();
     }
 
@@ -170,16 +170,16 @@ void loop() {
     
     
     if (currentMillis - previousCrawlMillis >  CRAWL_TEMP_poll_speed) {
-      // Read the current humidity
+      
       h = dht.readHumidity();
-      // Read temperature as Fahrenheit (isFahrenheit = true)
-      f = dht.readTemperature(true);
-      previousCrawlMillis = millis();
-
+      f = dht.readTemperature(true);   // Read temperature as Fahrenheit (isFahrenheit = true)
+      
       // Get the state of the condensate pumps and crawlspace power
       CondPumpAState = digitalRead(CondSumpPumpAStatePIN);
       CondPumpCState = digitalRead(CondSumpPumpCStatePIN);
       CrawlspacePowerState = digitalRead(CrawlSpacePowerStatePIN);
+      
+      previousCrawlMillis = millis();
     }
 
     
@@ -188,82 +188,9 @@ void loop() {
     
     
     if (currentMillis - previousHeatPumpMillis >  HEAT_PUMP_TEMP_poll_speed) {
-      // the first ROM byte indicates which chip
-      type_s = 1;
 
-      ds.reset();
-      ds.select(probeaddr1);
-      ds.write(0x44, 1);        // start conversion, with parasite power on at the end
-  
-      delay(1000);     // maybe 750ms is enough, maybe not
-      // we might do a ds.depower() here, but the reset will take care of it.
-  
-      present = ds.reset();
-      ds.select(probeaddr1);    
-      ds.write(0xBE);         // Read Scratchpad
-
-      for ( i = 0; i < 9; i++) {           // we need 9 bytes
-        data[i] = ds.read();
-      }
-
-      // Convert the data to actual temperature
-      // because the result is a 16 bit signed integer, it should
-      // be stored to an "int16_t" type, which is always 16 bits
-      // even when compiled on a 32 bit processor.
-      raw = (data[1] << 8) | data[0];
-      if (type_s) {
-        raw = raw << 3; // 9 bit resolution default
-        if (data[7] == 0x10) {
-          // "count remain" gives full 12 bit resolution
-          raw = (raw & 0xFFF0) + 12 - data[6];
-        }
-      } else {
-        byte cfg = (data[4] & 0x60);
-        // at lower res, the low bits are undefined, so let's zero them
-        if (cfg == 0x00) raw = raw & ~7;  // 9 bit resolution, 93.75 ms
-        else if (cfg == 0x20) raw = raw & ~3; // 10 bit res, 187.5 ms
-        else if (cfg == 0x40) raw = raw & ~1; // 11 bit res, 375 ms
-        //// default is 12 bit resolution, 750 ms conversion time
-      }
-      celsius = (float)raw / 16.0;
-      probe_1_temp = celsius * 1.8 + 32.0;
-
-      ds.reset();
-      ds.select(probeaddr2);
-      ds.write(0x44, 1);        // start conversion, with parasite power on at the end
-  
-      delay(1000);     // maybe 750ms is enough, maybe not
-      // we might do a ds.depower() here, but the reset will take care of it.
-  
-      present = ds.reset();
-      ds.select(probeaddr2);    
-      ds.write(0xBE);         // Read Scratchpad
-
-      for ( i = 0; i < 9; i++) {           // we need 9 bytes
-        data[i] = ds.read();
-      }
-
-      // Convert the data to actual temperature
-      // because the result is a 16 bit signed integer, it should
-      // be stored to an "int16_t" type, which is always 16 bits
-      // even when compiled on a 32 bit processor.
-      raw = (data[1] << 8) | data[0];
-      if (type_s) {
-        raw = raw << 3; // 9 bit resolution default
-        if (data[7] == 0x10) {
-          // "count remain" gives full 12 bit resolution
-          raw = (raw & 0xFFF0) + 12 - data[6];
-        }
-      } else {
-        byte cfg = (data[4] & 0x60);
-        // at lower res, the low bits are undefined, so let's zero them
-        if (cfg == 0x00) raw = raw & ~7;  // 9 bit resolution, 93.75 ms
-        else if (cfg == 0x20) raw = raw & ~3; // 10 bit res, 187.5 ms
-        else if (cfg == 0x40) raw = raw & ~1; // 11 bit res, 375 ms
-        //// default is 12 bit resolution, 750 ms conversion time
-      }
-      celsius = (float)raw / 16.0;
-      probe_2_temp = celsius * 1.8 + 32.0;
+      probe_1_temp = sensors.getTempF(probe1);
+      probe_2_temp = sensors.getTempF(probe2);
 
       previousHeatPumpMillis = millis();
     }
@@ -276,7 +203,9 @@ void loop() {
     
     //every cms_push_freq seconds, push data
     if (currentMillis - previousPushMillis > cms_push_freq) {
+      
       esp8266.sendHTTPRequest(cms_ip,makeHTTPGet());
+      
       previousPushMillis = millis();
     }   
 }
