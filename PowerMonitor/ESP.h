@@ -10,7 +10,7 @@ class ESP
     
   public:
     ESP();
-    void setupWiFi(String,String,int);
+    void setupWiFi(String,String);
     void sendHTTPRequest(String,String);
     
   private:
@@ -20,5 +20,3 @@ class ESP
 
 };
 #endif
-
-

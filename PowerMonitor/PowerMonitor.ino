@@ -7,8 +7,8 @@
 //Data is pushed in a json format compatible with Emoncms - https://emoncms.org/  to an Emoncms server of your choice (a private one or the public one)
 //
 //
-//     Tested with Arduino 1.8.5 and Teensyduino 1.40
-//     Tested with ESP8266 AT Firmware - v 1.6
+//     Tested with Arduino 1.8.7 and Teensyduino 1.44
+//     Tested with ESP8266 AT Firmware - v 1.7
 
 
 #include "ESP.h"
@@ -20,7 +20,6 @@
 
 #define SSID  "SSID"      // change this to match your WiFi SSID
 #define PASS  "PASS"  // change this to match your WiFi password
-#define PORT  "80"        // using port 8080 by default
 
 #define cms_ip "CMS IP"
 #define cms_apikey "APIKEY"
@@ -131,7 +130,7 @@ void setup() {
 
     delay(2000);  //wait for Teensy to come up
     
-    esp8266.setupWiFi(SSID,PASS,80);  //SSID, PASS, Port Number
+    esp8266.setupWiFi(SSID,PASS);  //SSID, PASSWORD
 
     sensors.begin();
     dht.begin();
