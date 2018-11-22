@@ -11,7 +11,7 @@ ESP::ESP() {
 
 }
 
-void ESP::setupWiFi(String Name, String Passw, int pt) {
+void ESP::setupWiFi(String Name, String Passw) {
   
   //this char array is used for waiting for the ESP's responses ie, "OK"
   char OKrn[] = "OK\r\n";
@@ -119,4 +119,3 @@ byte ESP::wait_for_esp_response(int timeout, char* term) {
   //Serial.println("---waitend---");
   return found;
 }
-
