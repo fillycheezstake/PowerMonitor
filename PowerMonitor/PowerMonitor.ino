@@ -8,7 +8,7 @@
 //
 //
 //     Tested with Arduino 1.8.7 and Teensyduino 1.44
-//     Tested with ESP8266 AT Firmware - v 1.7
+//     Tested with ESP8266 AT Firmware - v 1.6
 
 
 #include "ESP.h"
@@ -19,13 +19,15 @@
 #include <DallasTemperature.h>
 
 #define SSID  "SSID"      // change this to match your WiFi SSID
-#define PASS  "PASS"  // change this to match your WiFi password
+#define PASS  "PASSWORD"  // change this to match your WiFi password
+#define HOSTNAME "HOSTNAME" //change this to set a hostname for the ESP
 
-#define cms_ip "CMS IP"
-#define cms_apikey "APIKEY"
+#define cms_ip "CMS_IP_ADDR"
+#define cms_apikey "API_KEY"
+
 #define cms_push_freq 6000
-
 #define CT_poll_speed 1000
+#define WiFi_check_freq 1800000
 #define CRAWL_TEMP_poll_speed 60000      // temp & humididity poll speed
 #define HEAT_PUMP_TEMP_poll_speed 10000  // heat pump temp poll speed
 
@@ -55,6 +57,7 @@ unsigned long previousMillis = 0;
 unsigned long previousPushMillis = 0;
 unsigned long previousHeatPumpMillis = 0;
 unsigned long previousCrawlMillis = 0;
+unsigned long previousWiFiCheckMillis = 0;
 float RealPower[num_CTs] = {0};
 float ApparentPower[num_CTs] = {0};
 float current[num_CTs] = {0};
@@ -128,9 +131,9 @@ void setup() {
     CTdescs[16] = "Oven";
     CTdescs[17] = "Mains4";
 
-    delay(2000);  //wait for Teensy to come up
+    delay(7000);  //wait for Teensy to come up, takes about 7 seconds to boot & connect
     
-    esp8266.setupWiFi(SSID,PASS);  //SSID, PASSWORD
+    esp8266.setupWiFi(SSID,PASS,HOSTNAME);  //SSID, PASSWORD, HOSTNAME
 
     sensors.begin();
     dht.begin();
@@ -165,13 +168,16 @@ void loop() {
     }
 
     
-    
-    
-    
     if (currentMillis - previousCrawlMillis >  CRAWL_TEMP_poll_speed) {
       
       h = dht.readHumidity();
       f = dht.readTemperature(true);   // Read temperature as Fahrenheit (isFahrenheit = true)
+
+      if (isnan(h) || isnan(f)) {
+        Serial.println("Failed to read from DHT sensor!");
+        h = 0;
+        f = 0;
+      }
       
       // Get the state of the condensate pumps and crawlspace power
       CondPumpAState = digitalRead(CondSumpPumpAStatePIN);
@@ -181,32 +187,22 @@ void loop() {
       previousCrawlMillis = millis();
     }
 
-    
-    
-    
-    
-    
     if (currentMillis - previousHeatPumpMillis >  HEAT_PUMP_TEMP_poll_speed) {
-
       probe_1_temp = sensors.getTempF(probe1);
       probe_2_temp = sensors.getTempF(probe2);
-
       previousHeatPumpMillis = millis();
     }
     
-    
-    
-    
-    
-    
-    
     //every cms_push_freq seconds, push data
     if (currentMillis - previousPushMillis > cms_push_freq) {
-      
       esp8266.sendHTTPRequest(cms_ip,makeHTTPGet());
-      
       previousPushMillis = millis();
-    }   
+    }  
+
+     if (currentMillis - previousWiFiCheckMillis > WiFi_check_freq) {
+       esp8266.reconnectWiFi(SSID,PASS);
+       previousWiFiCheckMillis = millis();
+     }   
 }
 
 

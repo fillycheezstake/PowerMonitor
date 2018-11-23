@@ -10,8 +10,9 @@ class ESP
     
   public:
     ESP();
-    void setupWiFi(String,String);
+    void setupWiFi(String,String,String);
     void sendHTTPRequest(String,String);
+    void reconnectWiFi(String,String);
     
   private:
     char buffer[BUFFER_SIZE];
