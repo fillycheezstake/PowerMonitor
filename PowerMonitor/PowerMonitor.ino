@@ -20,14 +20,14 @@
 
 
 #define SSID  "SSID"      // change this to match your WiFi SSID
-#define PASS  "WifiPassword"  // change this to match your WiFi password
-#define HOSTNAME "Hostname" //set the hostname of the ESP8266
+#define PASS  "PASSWORD"  // change this to match your WiFi password
+#define HOSTNAME "HOSTNAME" //set the hostname of the ESP8266
 
-#define cms_ip "CMS_IP"
+#define cms_ip "CMS_IP_ADDR"
 #define cms_push_freq 4000
 #define CT_poll_speed 1000
 #define WiFi_check_freq 300000
-#define cms_apikey "APIKEY_HERE"
+#define cms_apikey "API_KEY_HERE"
 
 
 #define num_CTs 12        //12 is max number of CTs (hardware). Teensy 3.2 has 21 ADCs.
@@ -106,7 +106,7 @@ void loop() {
       //so if you use 20 zero crossings, 12 CTs will take ~2 seconds.
       for (int i=0; i < num_CTs; i++) {
         //loops through all CTs, saving their values in corresponding arrays
-        CT[i].calcVI(20,1000);
+        CT[i].calcVI(10,1000);
         RealPower[i] = CT[i].realPower;
         ApparentPower[i] = CT[i].apparentPower;
         current[i] = CT[i].Irms;

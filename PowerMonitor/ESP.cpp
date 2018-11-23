@@ -13,6 +13,8 @@ ESP::ESP() {
 
 void ESP::setupWiFi(String Name, String Passw, String newhostname) {
   
+  //Note: this assumes the ESP has been set up by turning on the CWAUTOCONN, saving the SSID/PASS in persistent memory, and setting it to station mode.
+  
   //this char array is used for waiting for the ESP's responses ie, "OK"
   char OKrn[] = "OK\r\n";
 //  char Conrn[] = "WIFI GOT IP\r\n";
@@ -24,19 +26,12 @@ void ESP::setupWiFi(String Name, String Passw, String newhostname) {
   //print version info
   Serial1.println("AT+GMR");
   wait_for_esp_response(1000,OKrn);
-
-  Serial1.print("AT+SWHOSTNAME=\"");
+  
+  //for some reason the hostname doesn't save in persistent memory on the ESP, so we set it here
+  Serial1.print("AT+CWHOSTNAME=\"");
   Serial1.print(newhostname);
   Serial1.println("\"");
   wait_for_esp_response(1000,OKrn);
-
-  //join AP
-  Serial1.print("AT+CWJAP_CUR=\"");
-  Serial1.print(Name);
-  Serial1.print("\",\"");
-  Serial1.print(Passw);
-  Serial1.println("\"");
-  wait_for_esp_response(9000,OKrn);
 
   //print IP Addr
   Serial1.println("AT+CIFSR");
