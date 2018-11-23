@@ -11,18 +11,11 @@ ESP::ESP() {
 
 }
 
-void ESP::setupWiFi(String Name, String Passw) {
+void ESP::setupWiFi(String Name, String Passw, String newhostname) {
   
   //this char array is used for waiting for the ESP's responses ie, "OK"
   char OKrn[] = "OK\r\n";
-  char Conrn[] = "WIFI GOT IP\r\n";
-
-  //restore factory settings - this seems to improve power-on wifi connect reliablity for some reason
-  Serial1.println("AT+RESTORE");
-  wait_for_esp_response(1000,OKrn);
-
-  //wait for ESP to reboot
-  delay(2000);
+//  char Conrn[] = "WIFI GOT IP\r\n";
   
   //turn on echo
   Serial1.println("ATE1");
@@ -32,33 +25,38 @@ void ESP::setupWiFi(String Name, String Passw) {
   Serial1.println("AT+GMR");
   wait_for_esp_response(1000,OKrn);
 
-  //set mode to station mode 
-  Serial1.println("AT+CWMODE_CUR=1");
-  wait_for_esp_response(2000,OKrn);   
-  
-  //set station mode to to get ip address via DHCP
-  Serial1.println("AT+CWDHCP_CUR=1,1");
-  wait_for_esp_response(2000,OKrn); 
+  Serial1.print("AT+SWHOSTNAME=\"");
+  Serial1.print(newhostname);
+  Serial1.println("\"");
+  wait_for_esp_response(1000,OKrn);
 
   //join AP
   Serial1.print("AT+CWJAP_CUR=\"");
   Serial1.print(Name);
-  Serial1.print("\",\""); 
+  Serial1.print("\",\"");
   Serial1.print(Passw);
   Serial1.println("\"");
-  wait_for_esp_response(9000,Conrn);
-
-  //Set the max number of connections to 1 
-  Serial1.println("AT+CIPMUX=0");
-  wait_for_esp_response(1000,OKrn);
+  wait_for_esp_response(9000,OKrn);
 
   //print IP Addr
   Serial1.println("AT+CIFSR");
-  wait_for_esp_response(5000,OKrn);
+  wait_for_esp_response(1000,OKrn);
   
   
   Serial.println("---------------*****##### ESP READY #####*****---------------");
   
+}
+
+void ESP::reconnectWiFi(String Name, String Passw){
+  char OKrn[] = "OK\r\n";    
+    
+  //join AP
+  Serial1.print("AT+CWJAP_CUR=\"");
+  Serial1.print(Name);
+  Serial1.print("\",\"");
+  Serial1.print(Passw);
+  Serial1.println("\"");
+  wait_for_esp_response(9000,OKrn);
 }
 
 

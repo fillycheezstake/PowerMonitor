@@ -21,10 +21,12 @@
 
 #define SSID  "SSID"      // change this to match your WiFi SSID
 #define PASS  "WifiPassword"  // change this to match your WiFi password
+#define HOSTNAME "Hostname" //set the hostname of the ESP8266
 
 #define cms_ip "CMS_IP"
 #define cms_push_freq 4000
-#define CT_poll_speed 1000   //if disable webserver mode, you can decrease these both (although it takes a second or two to push the data)
+#define CT_poll_speed 1000
+#define WiFi_check_freq 300000
 #define cms_apikey "APIKEY_HERE"
 
 
@@ -34,6 +36,7 @@ ESP esp8266;
 EnergyMonitor CT[num_CTs];
 unsigned long previousCTMillis = 0;
 unsigned long previousPushMillis = 0;
+unsigned long previousWiFiCheckMillis = 0;
 float RealPower[num_CTs] = {0};
 float ApparentPower[num_CTs] = {0};
 float current[num_CTs] = {0};
@@ -87,10 +90,10 @@ void setup() {
     CTdescs[10] = "BarO";
     CTdescs[11] = "SETME";
 
-    Serial.println("Booting... waiting for WiFi & Teensy");
-    delay(5000);  //wait for Teensy to come up
-    //SSID, PASS, Port Number
-    esp8266.setupWiFi(SSID,PASS);
+    Serial.println("Booting... waiting for ESP8266 WiFi");
+    delay(7000);  //wait for Teensy to come up (takes about 7 seconds to boot and get connected to wifi)
+    //SSID, PASS
+    esp8266.setupWiFi(SSID,PASS,HOSTNAME);
 }
 
 void loop() {    
@@ -119,11 +122,12 @@ void loop() {
       esp8266.sendHTTPRequest(cms_ip,makeHTTPGet());
       previousPushMillis = millis();
     }   
+
+    if (currentMillis - previousWiFiCheckMillis > WiFi_check_freq) {
+      esp8266.reconnectWiFi(SSID,PASS);
+      previousWiFiCheckMillis = millis();
+    }   
 }
-
-
-
-
 
 
 String makeHTTPGet(){
