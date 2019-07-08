@@ -17,7 +17,6 @@ void ESP::setupWiFi(String Name, String Passw, String newhostname) {
   
   //this char array is used for waiting for the ESP's responses ie, "OK"
   char OKrn[] = "OK\r\n";
-//  char Conrn[] = "WIFI GOT IP\r\n";
   
   //turn on echo
   Serial1.println("ATE1");
@@ -32,6 +31,13 @@ void ESP::setupWiFi(String Name, String Passw, String newhostname) {
   Serial1.print(newhostname);
   Serial1.println("\"");
   wait_for_esp_response(1000,OKrn);
+
+  Serial1.print("AT+CWJAP_DEF=\"");
+  Serial1.print(Name);
+  Serial1.print("\",\"");
+  Serial1.print(Passw);
+  Serial1.println("\"");
+  wait_for_esp_response(9000,OKrn);
 
   //print IP Addr
   Serial1.println("AT+CIFSR");

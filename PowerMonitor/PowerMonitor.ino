@@ -7,8 +7,8 @@
 //Data is pushed in a json format compatible with Emoncms - https://emoncms.org/  to an Emoncms server of your choice (a private one or the public one)
 //
 //
-//     Tested with Arduino 1.8.7 and Teensyduino 1.44
-//     Tested with ESP8266 AT Firmware - v 1.6
+//     Tested with Arduino 1.8.9 and Teensyduino 1.46
+//     Tested with ESP8266 AT Firmware - v 2.0
 
 
 #include "ESP.h"
@@ -20,9 +20,9 @@
 
 #define SSID  "SSID"      // change this to match your WiFi SSID
 #define PASS  "PASSWORD"  // change this to match your WiFi password
-#define HOSTNAME "HOSTNAME" //change this to set a hostname for the ESP
+#define HOSTNAME "EmonNode2" //change this to set a hostname for the ESP
 
-#define cms_ip "CMS_IP_ADDR"
+#define cms_ip "IP_ADDR"
 #define cms_apikey "API_KEY"
 
 #define cms_push_freq 6000
@@ -31,7 +31,9 @@
 #define CRAWL_TEMP_poll_speed 60000      // temp & humididity poll speed
 #define HEAT_PUMP_TEMP_poll_speed 10000  // heat pump temp poll speed
 
-#define ONE_WIRE_BUS 2
+#define num_CTs 18        //Teensy 3.2 has 21 ADC pins. One must be used for a voltage source, so a maximum of 20.
+
+#define ONE_WIRE_BUS "D2"
 #define TEMPERATURE_PRECISION 9
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
@@ -39,17 +41,14 @@ DallasTemperature sensors(&oneWire);
 DeviceAddress probe1 = {0x10, 0x5B, 0x6E, 0xD, 0x3, 0x8, 0x0, 0x91} ;
 DeviceAddress probe2 = {0x10, 0x27, 0xC8, 0xD, 0x3, 0x8, 0x0, 0xDB} ;
 
-#define DHTPIN 3     // DHT Temp/Humidity probe on D3
+
+#define CondSumpPumpAStatePIN "D4"     // Condensate Sump Pump A State Pin
+#define CondSumpPumpCStatePIN "D5"     // Condensate Sump Pump C State Pin
+#define CrawlSpacePowerStatePIN "D6"   // Crawl Space Power State Pin
+
+#define DHTPIN "D3"     // DHT Temp/Humidity probe on D3
 #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
 DHT dht(DHTPIN, DHTTYPE); // Initialize DHT sensor.
-
-#define num_CTs 18        //Teensy 3.2 has 21 ADC pins. One must be used for a voltage source, so a maximum of 20.
-
-#define CondSumpPumpAStatePIN 4     // Condensate Sump Pump A State Pin
-#define CondSumpPumpCStatePIN 5     // Condensate Sump Pump C State Pin
-#define CrawlSpacePowerStatePIN 6   // Crawl Space Power State Pin
-
-
 
 ESP esp8266;
 EnergyMonitor CT[num_CTs];
@@ -85,7 +84,7 @@ void setup() {
     //voltage(input_pin, volt_scaling_const, phase_shift)  
     //since all CTs use the same voltage source, we iterate them
     for (int i=0; i < num_CTs; i++) {
-      CT[i].voltage(A0, 118, 1.7);
+      CT[i].voltage(A2, 149, 1.7);
     }
     
     // current calibration:
@@ -93,24 +92,24 @@ void setup() {
     // Each CT calibrated with reference meter (current loop or KillAWatt) which provided "measured current"
     //    while running with "Reference Calibration" value which was based upon burden resistor (eg: 30, 10 etc)
     // Comment Format: Channel Name -- Reference Calibration (based on burden resistor) * measured current / indicated current with reference calibration value = new calibration value 
-    CT[0].current(A1, 29.48);       // AC-A        30 * 12.04 / 12.25 = 29.48
-    CT[1].current(A2, 29.14);       // AC-B        30 * 12.52 / 12.89 = 29.14
-    CT[2].current(A3, 28.41);       // PoolPump    30 * 6.92 / 7.06 = 28.41
-    CT[3].current(A4, 9.9);         // PoolLt      10 * 4.0 / 4.04 = 9.9
-    CT[4].current(A5, 181.7);       // Mains2      233 * 64.99 / (83.65-0.33) = 181.7
-    CT[5].current(A6, 30.11);       // Generator A 30 * 11.4 / 11.36 = 30.11
-    CT[6].current(A7, 90.12);       // Heat A      106 * 64.99 / 76.44 = 90.12
-    CT[7].current(A8, 30.00);       // Generator B 30 * 11.41 / 11.41 = 30.0
-    CT[8].current(A9, 294.9);       // Barn A      300 * 12.10 / 12.31 = 294.9
-    CT[9].current(A10, 296.6);      // Barn B      300 * 12.16 / 12.30 = 296.6
-    CT[10].current(A11, 58.75);     // Heat B      71 * 40.88 / 49.40 = 58.75
-    CT[11].current(A12, 42.71);     // Heat C      50 * 17.05 / 19.96 = 42.71
-    CT[12].current(A13, 343.37);    // Mains 1     233 * 64.99 / (47.5-3.4) = 343.37
-    CT[13].current(A14, 0.1);       // Abandon (was Mains 2, failed)
-    CT[14].current(A15, 327.99);    // Mains 3     233 * 40.88 / (29.4-4.03) = 215.99 * 1.52 = 327.99
-    CT[15].current(A16, 53.56);     // cooktop     50 *31.45 / 29.36 = 53.56
-    CT[16].current(A17, 57.52);     // oven        50 * 22.55 / 19.6 = 57.52
-    CT[17].current(A18, 324.13);    // Mains 4     233 * 40.88 / (30.10-3.35) = 356.1  256.1 * 1.27 = 324.13
+    CT[0].current(A0, 29.48);       // AC-A        CT1  30 * 12.04 / 12.25 = 29.48
+    CT[1].current(A1, 29.14);       // AC-B        CT2  30 * 12.52 / 12.89 = 29.14
+    CT[2].current(A3, 28.41);       // PoolPump    CT3  30 * 6.92 / 7.06 = 28.41
+    CT[3].current(A4, 9.9);         // PoolLt      CT4  10 * 4.0 / 4.04 = 9.9
+    CT[4].current(A5, 181.7);       // Mains2      CT5  233 * 64.99 / (83.65-0.33) = 181.7
+    CT[5].current(A6, 30.11);       // Generator A CT6  30 * 11.4 / 11.36 = 30.11
+    CT[6].current(A7, 90.12);       // Heat A      CT7  106 * 64.99 / 76.44 = 90.12
+    CT[7].current(A8, 30.00);       // Generator B CT8  30 * 11.41 / 11.41 = 30.0
+    CT[8].current(A9, 294.9);       // Barn A      CT9  300 * 12.10 / 12.31 = 294.9
+    CT[9].current(A10, 296.6);      // Barn B      CT10 300 * 12.16 / 12.30 = 296.6
+    CT[10].current(A11, 58.75);     // Heat B      CT11 71 * 40.88 / 49.40 = 58.75
+    CT[11].current(A12, 42.71);     // Heat C      CT12 50 * 17.05 / 19.96 = 42.71
+    CT[12].current(A13, 343.37);    // Mains 1     CT13 233 * 64.99 / (47.5-3.4) = 343.37
+    CT[13].current(A14, 0.1);       // Abandon     CT14 (was Mains 2, This ADC Channel on the Teensy failed)
+    CT[14].current(A15, 327.99);    // Mains 3     CT15 233 * 40.88 / (29.4-4.03) = 215.99 * 1.52 = 327.99
+    CT[15].current(A16, 53.56);     // cooktop     CT16 50 *31.45 / 29.36 = 53.56
+    CT[16].current(A17, 57.52);     // oven        CT17 50 * 22.55 / 19.6 = 57.52
+    CT[17].current(A18, 324.13);    // Mains 4     CT18 233 * 40.88 / (30.10-3.35) = 356.1  256.1 * 1.27 = 324.13
        
     CTdescs[0] = "ACA";
     CTdescs[1] = "ACB";
@@ -131,15 +130,15 @@ void setup() {
     CTdescs[16] = "Oven";
     CTdescs[17] = "Mains4";
 
-    delay(7000);  //wait for Teensy to come up, takes about 7 seconds to boot & connect
+    delay(3000);  //wait for Teensy to come up, takes about 3 seconds to boot & connect
     
     esp8266.setupWiFi(SSID,PASS,HOSTNAME);  //SSID, PASSWORD, HOSTNAME
 
     sensors.begin();
     dht.begin();
     
-    pinMode(2, INPUT_PULLUP);                         //Tell Teensy to turn on a pullup resistor on the temp probe pin
-    pinMode(3, INPUT_PULLUP);                         //Tell Teensy to turn on a pullup resistor on the DHT temp/humidy pin also
+    pinMode(ONE_WIRE_BUS, INPUT_PULLUP);                         //Tell Teensy to turn on a pullup resistor on the Dallas Temp probe pin
+    pinMode(DHTPIN, INPUT_PULLUP);                         //Tell Teensy to turn on a pullup resistor on the DHT temp/humidy pin also
     pinMode(CondSumpPumpAStatePIN, INPUT_PULLUP);     //Tell Teensy to turn on a pullup resistor on the condensate A Pump State Pin
     pinMode(CondSumpPumpCStatePIN, INPUT_PULLUP);     //Tell Teensy to turn on a pullup resistor on the condensate C Pump State Pin
     pinMode(CrawlSpacePowerStatePIN, INPUT_PULLUP);   //Crawlspace Power State Pin is digital input
@@ -213,7 +212,7 @@ void loop() {
 String makeHTTPGet(){
    String GetReq;
   
-   GetReq =  "GET /emoncms/input/post.json?node=2&apikey=";
+   GetReq =  "GET /emoncms/input/post.json?node=99&apikey=";
    GetReq += cms_apikey;
    GetReq += "&json=";
    GetReq += json_gen_forcms();
